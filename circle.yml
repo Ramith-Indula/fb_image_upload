@@ -1,0 +1,33 @@
+version: 2
+jobs:
+  build:
+    working_directory: ~/ngx-facebook-example/
+    docker:
+      - image: node:7
+    branches:
+      - only:
+        - master
+    steps:
+      - checkout
+      - restore_cache:
+         key: npm_{{ checksum "package.json" }}
+      - run: npm i
+      - save_cache:
+         key: npm_{{ checksum "package.json" }}
+         paths:
+           - ~/ngx-facebook-example/node_modules/
+      - run:
+         name: Building project
+         command: npm run build:prod
+      - add_ssh_keys
+      - run:
+         name: Deploying to gh-pages
+         command: |
+           git checkout gh-pages
+           mv dist/* .
+           rm -rf dist node_modules
+           git config --global user.name "ZM Bot"
+           git config --global user.email "ibby93+zmbot@gmail.com"
+           git add .
+           git commit -am "Automated build [ci skip]"
+           git push origin gh-pages || true
